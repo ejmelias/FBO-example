@@ -1,6 +1,7 @@
 import { extend, createPortal, useFrame } from "@react-three/fiber";
 import { useRef, useMemo } from "react";
-import { useFBO, OrbitControls } from "@react-three/drei";
+import { useFBO, OrbitControls, useGLTF } from "@react-three/drei";
+import { useControls } from 'leva';
 import * as THREE from 'three';
 import SimulationMaterial from "./SimulationMaterial";
 import fragment from './Shaders/fragment.glsl';
@@ -9,8 +10,24 @@ import vertex from './Shaders/vertex.glsl';
 extend({ SimulationMaterial });
 
 function Particles() {
+    
+    const {nodes} = useGLTF('./david.glb');
+    const vertices = nodes.david.geometry.attributes.position.array;
+    const total = vertices.length;
+    //const size = 671;
+    const size = parseInt( Math.sqrt( total) );
+    
+    const data = new Float32Array( size * size * 4 );
+    for( var i = 0; i < total; i++ ) {
+        const i3 = i * 3;
+        const i4 = i * 4;
+        data[i4    ] = vertices[i3    ] / 30;
+        data[i4 + 1] = vertices[i3 + 1] / 30;
+        data[i4 + 2] = vertices[i3 + 2] / 30;
+        data[i4 + 3] = 1.0;
+    }
 
-    const size = 128;
+
 
     // This reference gives us direct access to our points
     const points = useRef();
@@ -50,9 +67,10 @@ function Particles() {
             value: null,
         },
     }),[]);
+    //simulationMaterialRef.current.uniforms.uMix.value = useControls({ value: 0.0, min: 0.0, max: 1.0, step: 0.01});
 
-    useFrame((state) => {
-        const { gl, clock } = state;
+    useFrame((state, delta) => {
+        const { gl } = state;
 
         // Set the current render target to our FBO
         gl.setRenderTarget(renderTarget);
@@ -66,7 +84,9 @@ function Particles() {
         // and send that data to the final shaderMaterial via the `uPositions` uniform
         points.current.material.uniforms.uPositions.value = renderTarget.texture;
 
-        simulationMaterialRef.current.uniforms.uTime.value = clock.elapsedTime;
+        points.current.rotation.y += delta * 0.5;
+        simulationMaterialRef.current.uniforms.uTime.value += delta;
+
     });
 
     return (
@@ -75,7 +95,7 @@ function Particles() {
             {/* Render off-screen our simulation material and square geometry */}
             {createPortal(
                 <mesh>
-                    <simulationMaterial ref={simulationMaterialRef} args={[size]} />
+                    <simulationMaterial ref={simulationMaterialRef} args={[size, data]} />
                     <bufferGeometry>
                         <bufferAttribute
                             attach="attributes-position"
