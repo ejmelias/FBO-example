@@ -1,8 +1,7 @@
-# basic-fbo-particles
-basic example of fbo particles in react three fiber to build off of.
+# FBO-example
+Example of particles using three methods for generating data:
+- using the grayscale values from pixels in an image (loaded as a texture)
+- using the vertices from a 3d model
+- randomly generating them (in the shape of a sphere)
 
-references:
-
-http://barradeau.com/blog/?p=621
-
-https://blog.maximeheckel.com/posts/the-magical-world-of-particles-with-react-three-fiber-and-shaders/
+The examples can be seen running [here](https://fbo-examples.vercel.app/)
